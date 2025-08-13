@@ -1,0 +1,517 @@
+Part 0: Preparation
+SQL> connect / as sysdba
+Connected.
+SQL> @ /home/oracle/Downloads/Lab-4-files/Lab-4-files/lab4setup.sql
+...
+...
+...
+...
+Commit complete.
+
+
+
+Grant succeeded
+
+Part 1: SQL*Loader
+--Step 1
+[oracle@bigdatalite ~]$ sqlplus happy/dwarf@mydatabase
+
+SQL*Plus: Release 12.1.0.2.0 Production on Tue Nov 5 04:33:01 2024
+
+Copyright (c) 1982, 2014, Oracle.  All rights reserved.
+
+ERROR:
+ORA-12154: TNS:could not resolve the connect identifier specified
+
+
+Enter user-name: happy
+Enter password: 
+Last Successful login time: Tue Nov 05 2024 04:23:18 -05:00
+
+Connected to:
+Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+
+SQL> @ /home/oracle/Downloads/Lab-4-files/Lab-4-files/loademp1.sql
+DROP TABLE LOAD_EMP
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist
+
+
+
+Table created.
+
+SQL> exit
+Disconnected from Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+
+--Step 2
+[oracle@bigdatalite ~]$ cd /home/oracle/Downloads/Lab-4-files/Lab-4-files
+[oracle@bigdatalite Lab-4-files]$ sqlldr happy/dwarf control=loademp1.ctl
+
+SQL*Loader: Release 12.1.0.2.0 - Production on Tue Nov 5 05:17:26 2024
+
+Copyright (c) 1982, 2014, Oracle and/or its affiliates.  All rights reserved.
+
+Path used:      Conventional
+Commit point reached - logical record count 64
+Commit point reached - logical record count 128
+Commit point reached - logical record count 192
+Commit point reached - logical record count 256
+Commit point reached - logical record count 320
+Commit point reached - logical record count 384
+Commit point reached - logical record count 448
+Commit point reached - logical record count 512
+Commit point reached - logical record count 576
+Commit point reached - logical record count 640
+Commit point reached - logical record count 704
+Commit point reached - logical record count 768
+Commit point reached - logical record count 832
+SQL*Loader-605: Non-data dependent ORACLE error occurred -- load discontinued.
+
+
+Table LOAD_EMP:
+  832 Rows successfully loaded.
+
+Check the log file:
+  loademp1.log
+for more information about the load.
+
+--Step 3
+SQL> select bytes, blocks, extents, initial_extent, next_extent FROM user_segments WHERE segment_name='LOAD_EMP';
+
+     BYTES     BLOCKS	 EXTENTS INITIAL_EXTENT NEXT_EXTENT
+---------- ---------- ---------- -------------- -----------
+     65536	    8	       1	  65536     1048576
+
+SQL> select tablespace_name, extent_id, bytes, blocks FROM user_extents WHERE segment_name='LOAD_EMP';
+
+TABLESPACE_NAME 		EXTENT_ID      BYTES	 BLOCKS
+------------------------------ ---------- ---------- ----------
+APPL_DATA				0      65536	      8
+
+SQL> select count(*) from load_emp;
+
+  COUNT(*)
+----------
+       832
+
+--Step 4
+SQL> delete from load_emp where empno<>5600;
+
+832 rows deleted.
+
+SQL> exit
+Disconnected from Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+[oracle@bigdatalite ~]$ cd /home/oracle/Downloads/Lab-4-files/Lab-4-files
+[oracle@bigdatalite Lab-4-files]$ sqlldr userid=happy/dwarf control=loademp1.ctl
+ 
+SQL*Loader: Release 12.1.0.2.0 - Production on Tue Nov 5 05:59:43 2024
+
+Copyright (c) 1982, 2014, Oracle and/or its affiliates.  All rights reserved.
+
+Path used:      Conventional
+Commit point reached - logical record count 64
+Commit point reached - logical record count 128
+Commit point reached - logical record count 192
+Commit point reached - logical record count 256
+Commit point reached - logical record count 320
+Commit point reached - logical record count 384
+Commit point reached - logical record count 448
+Commit point reached - logical record count 512
+Commit point reached - logical record count 576
+Commit point reached - logical record count 640
+Commit point reached - logical record count 704
+Commit point reached - logical record count 768
+Commit point reached - logical record count 832
+SQL*Loader-605: Non-data dependent ORACLE error occurred -- load discontinued.
+
+
+Table LOAD_EMP:
+  832 Rows successfully loaded.
+
+Check the log file:
+  loademp1.log
+for more information about the load.
+
+--Step 5
+[oracle@bigdatalite ~]$ sqlplus happy/dwarf@mydatabase
+
+SQL*Plus: Release 12.1.0.2.0 Production on Tue Nov 5 06:01:32 2024
+
+Copyright (c) 1982, 2014, Oracle.  All rights reserved.
+
+ERROR:
+ORA-12154: TNS:could not resolve the connect identifier specified
+
+
+Enter user-name: happy
+Enter password: 
+Last Successful login time: Tue Nov 05 2024 05:59:43 -05:00
+
+Connected to:
+Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+
+SQL> select count(*) from load_emp;
+
+  COUNT(*)
+----------
+       832
+
+SQL> delete from load_emp where empno <> 5600;
+
+832 rows deleted.
+
+SQL> exit
+Disconnected from Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+[oracle@bigdatalite ~]$ cd /home/oracle/Downloads/Lab-4-files/Lab-4-files
+[oracle@bigdatalite Lab-4-files]$ sqlldr userid=happy/dwarf control=loademp1.ctl direct=true;
+
+SQL*Loader: Release 12.1.0.2.0 - Production on Tue Nov 5 06:37:05 2024
+
+Copyright (c) 1982, 2014, Oracle and/or its affiliates.  All rights reserved.
+
+Path used:      Direct
+SQL*Loader-2026: the load was aborted because SQL Loader cannot continue.
+
+Load completed - logical record count 1000.
+
+Table LOAD_EMP:
+  0 Rows successfully loaded.
+
+Check the log file:
+  loademp1.log
+for more information about the load.
+--Step 6
+SQL> select bytes, blocks, extents, initial_extent, next_extent from user_segments where segment_name='load_emp';
+
+no rows selected
+
+SQL> select tablespace_name, extent_id, bytes, blocks from user_extents where segment_name='load_emp';
+
+no rows selected
+
+SQL> select count(*) from load_emp;
+
+  COUNT(*)
+----------
+	 0
+
+
+Part 2: Export and Import
+--Step 7
+SQL> connect / as sysdba
+Connected.
+SQL> create user exp_test identified by exp_test default tablespace users temporary tablespace temp;
+
+User created.
+
+SQL> grant create session, create table to exp_test;
+
+Grant succeeded.
+
+SQL> alter user exp_test quota 2m on users;
+
+User altered.
+
+--Step 8
+SQL> connect exp_test/exp_test
+Connected.
+SQL> @ /home/oracle/Downloads/Lab-4-files/Lab-4-files/dept.sql
+DROP TABLE DEPT CASCADE CONSTRAINTS
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist
+
+
+
+Table created.
+
+SQL> @ /home/oracle/Downloads/Lab-4-files/Lab-4-files/deptdata.sql
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+Commit complete.
+SQL> @ /home/oracle/Downloads/Lab-4-files/Lab-4-files/emp.sql
+DROP TABLE EMP CASCADE CONSTRAINTS
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist
+
+
+
+Table created.
+
+SQL> @ /home/oracle/Downloads/Lab-4-files/Lab-4-files/empdata.sql
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+Commit complete.
+SQL> exit
+Disconnected from Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+
+--Step 9
+[oracle@bigdatalite ~]$ exp
+
+Export: Release 12.1.0.2.0 - Production on Tue Nov 5 06:48:44 2024
+
+Copyright (c) 1982, 2014, Oracle and/or its affiliates.  All rights reserved.
+
+
+Username: exp_test
+Password: 
+
+Connected to: Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+Enter array fetch buffer size: 4096 > 
+
+Export file: expdat.dmp > 
+
+(2)U(sers), or (3)T(ables): (2)U > 
+
+Export grants (yes/no): yes > 
+
+Export table data (yes/no): yes > 
+
+Compress extents (yes/no): yes > 
+
+Export done in US7ASCII character set and AL16UTF16 NCHAR character set
+. exporting pre-schema procedural objects and actions
+. exporting foreign function library names for user EXP_TEST 
+. exporting PUBLIC type synonyms
+. exporting private type synonyms
+. exporting object type definitions for user EXP_TEST 
+About to export EXP_TEST's objects ...
+. exporting database links
+. exporting sequence numbers
+. exporting cluster definitions
+. about to export EXP_TEST's tables via Conventional Path ...
+. . exporting table                           DEPT          4 rows exported
+. . exporting table                            EMP         14 rows exported
+. exporting synonyms
+. exporting views
+. exporting stored procedures
+. exporting operators
+. exporting referential integrity constraints
+. exporting triggers
+. exporting indextypes
+. exporting bitmap, functional and extensible indexes
+. exporting posttables actions
+. exporting materialized views
+. exporting snapshot logs
+. exporting job queues
+. exporting refresh groups and children
+. exporting dimensions
+. exporting post-schema procedural objects and actions
+. exporting statistics
+Export terminated successfully without warnings.
+
+--Step 10
+[oracle@bigdatalite ~]$ sqlplus exp_test/exp_test
+
+SQL*Plus: Release 12.1.0.2.0 Production on Tue Nov 5 06:50:28 2024
+
+Copyright (c) 1982, 2014, Oracle.  All rights reserved.
+
+Last Successful login time: Tue Nov 05 2024 06:48:50 -05:00
+
+Connected to:
+Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+
+SQL> drop table emp;
+
+Table dropped.
+
+SQL> drop table dept;
+
+Table dropped.
+
+
+--Step 11
+[oracle@bigdatalite ~]$ imp exp_test/exp_test
+
+Import: Release 12.1.0.2.0 - Production on Tue Nov 5 06:52:28 2024
+
+Copyright (c) 1982, 2014, Oracle and/or its affiliates.  All rights reserved.
+
+
+Connected to: Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+
+Import data only (yes/no): no > 
+
+Import file: expdat.dmp > 
+
+Enter insert buffer size (minimum is 8192) 30720> 
+
+Export file created by EXPORT:V12.01.00 via conventional path
+import done in US7ASCII character set and AL16UTF16 NCHAR character set
+List contents of import file only (yes/no): no > 
+
+Ignore create error due to object existence (yes/no): no > 
+
+Import grants (yes/no): yes > 
+
+Import table data (yes/no): yes > 
+
+Import entire export file (yes/no): no > 
+Username: exp_test
+
+Enter table(T) or partition(T:P) names. Null list means all tables for user
+Enter table(T) or partition(T:P) name or . if done: 
+
+. importing EXP_TEST's objects into EXP_TEST
+. . importing table                         "DEPT"          4 rows imported
+. . importing table                          "EMP"         14 rows imported
+Import terminated successfully without warnings.
+
+--Step 12
+[oracle@bigdatalite ~]$ sqlplus exp_test/exp_test
+
+SQL*Plus: Release 12.1.0.2.0 Production on Tue Nov 5 06:53:19 2024
+
+Copyright (c) 1982, 2014, Oracle.  All rights reserved.
+
+Last Successful login time: Tue Nov 05 2024 06:52:28 -05:00
+
+Connected to:
+Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+
+SQL> select * from dept;
+
+    DEPTNO DNAME	  LOC
+---------- -------------- -------------
+	10 ACCOUNTING	  NEW YORK
+	20 RESEARCH	  DALLAS
+	30 SALES	  CHICAGO
+	40 OPERATIONS	  BOSTON
+
+SQL> select * from emp;
+
+     EMPNO ENAME      JOB	       MGR HIREDATE	    SAL       COMM
+---------- ---------- --------- ---------- --------- ---------- ----------
+    DEPTNO
+----------
+      7369 SMITH      CLERK	      7902 17-DEC-80	    800
+	20
+
+      7499 ALLEN      SALESMAN	      7698 20-FEB-81	   1600        300
+	30
+
+      7521 WARD       SALESMAN	      7698 22-FEB-81	   1250        500
+	30
+
+
+     EMPNO ENAME      JOB	       MGR HIREDATE	    SAL       COMM
+---------- ---------- --------- ---------- --------- ---------- ----------
+    DEPTNO
+----------
+      7566 JONES      MANAGER	      7839 02-APR-81	   2975
+	20
+
+      7654 MARTIN     SALESMAN	      7698 28-SEP-81	   1250       1400
+	30
+
+      7698 BLAKE      MANAGER	      7839 01-MAY-81	   2850
+	30
+
+
+     EMPNO ENAME      JOB	       MGR HIREDATE	    SAL       COMM
+---------- ---------- --------- ---------- --------- ---------- ----------
+    DEPTNO
+----------
+      7782 CLARK      MANAGER	      7839 09-JUN-81	   2450
+	10
+
+      7788 SCOTT      ANALYST	      7566 09-DEC-82	   3000
+	20
+
+      7839 KING       PRESIDENT 	   17-NOV-81	   5000
+	10
+
+
+     EMPNO ENAME      JOB	       MGR HIREDATE	    SAL       COMM
+---------- ---------- --------- ---------- --------- ---------- ----------
+    DEPTNO
+----------
+      7844 TURNER     SALESMAN	      7698 08-SEP-81	   1500 	 0
+	30
+
+      7876 ADAMS      CLERK	      7788 12-JAN-83	   1100
+	20
+
+      7900 JAMES      CLERK	      7698 03-DEC-81	    950
+	30
+
+
+     EMPNO ENAME      JOB	       MGR HIREDATE	    SAL       COMM
+---------- ---------- --------- ---------- --------- ---------- ----------
+    DEPTNO
+----------
+      7902 FORD       ANALYST	      7566 03-DEC-81	   3000
+	20
+
+      7934 MILLER     CLERK	      7782 23-JAN-82	   1300
+	10
+
+
+14 rows selected.
+
+
